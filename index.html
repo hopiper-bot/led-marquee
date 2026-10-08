@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="mobile-web-app-capable" content="yes">
+<title>LED 跑馬燈</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    width: 100%; height: 100%;
+    background: #000; color: #fff;
+    font-family: "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", sans-serif;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  /* ===== 設定畫面 ===== */
+  #setup {
+    position: fixed; inset: 0;
+    display: flex; flex-direction: column;
+    padding: env(safe-area-inset-top) 20px calc(env(safe-area-inset-bottom) + 20px);
+    overflow-y: auto;
+    gap: 18px;
+  }
+  #setup h1 {
+    text-align: center; font-size: 28px; font-weight: 900;
+    margin-top: 24px; letter-spacing: 2px;
+  }
+  #setup h1 .dot { color: #ff2d2d; }
+
+  .field label {
+    display: block; font-size: 22px; font-weight: 700; margin-bottom: 8px;
+  }
+  #text {
+    width: 100%; min-height: 90px; resize: none;
+    font-size: 28px; font-weight: 700; line-height: 1.4;
+    padding: 14px; border-radius: 14px; border: 3px solid #333;
+    background: #111; color: #fff;
+  }
+  #text:focus { outline: none; border-color: #ff2d2d; }
+
+  .opt-row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .opt {
+    flex: 1 1 0; min-width: 72px;
+    font-size: 22px; font-weight: 800;
+    padding: 16px 8px; border-radius: 14px;
+    border: 3px solid #333; background: #111; color: #fff;
+    text-align: center; cursor: pointer; user-select: none;
+    transition: border-color .1s, background .1s;
+  }
+  .opt.active { border-color: #fff; }
+  .opt.c-red.active    { background:#ff2d2d; color:#000; }
+  .opt.c-green.active  { background:#20e35a; color:#000; }
+  .opt.c-yellow.active { background:#ffe600; color:#000; }
+  .opt.c-white.active  { background:#ffffff; color:#000; }
+  .opt.c-cyan.active   { background:#1ad1ff; color:#000; }
+  .opt.spd.active      { background:#fff; color:#000; }
+
+  .swatch { display:inline-block; width:20px; height:20px; border-radius:50%; vertical-align:-3px; margin-right:6px; }
+  .sw-red{background:#ff2d2d}.sw-green{background:#20e35a}.sw-yellow{background:#ffe600}.sw-white{background:#fff}.sw-cyan{background:#1ad1ff}
+
+  #startBtn {
+    margin-top: 6px;
+    width: 100%; font-size: 32px; font-weight: 900; letter-spacing: 4px;
+    padding: 22px; border: none; border-radius: 18px;
+    background: #ff2d2d; color: #000; cursor: pointer;
+  }
+  #startBtn:active { transform: scale(.98); }
+
+  .hint { text-align:center; font-size:16px; color:#888; line-height:1.6; }
+
+  /* ===== 播放畫面 ===== */
+  #player {
+    position: fixed; inset: 0; display: none;
+    background: #000; overflow: hidden;
+    align-items: center;
+  }
+  #player.on { display: flex; }
+  #marquee {
+    white-space: nowrap;
+    font-weight: 900;
+    line-height: 1;
+    will-change: transform;
+    padding: 0 10vw;
+  }
+  #exitHint {
+    position: fixed; top: calc(env(safe-area-inset-top) + 10px); left: 50%;
+    transform: translateX(-50%);
+    font-size: 14px; color: rgba(255,255,255,.35);
+    pointer-events: none; transition: opacity .5s; z-index: 2;
+  }
+</style>
+</head>
+<body>
+
+<div id="setup">
+  <h1>LED 跑馬燈<span class="dot">●</span></h1>
+
+  <div class="field">
+    <label>要顯示的字</label>
+    <textarea id="text" placeholder="在這裡打字…" maxlength="100">歡迎光臨</textarea>
+  </div>
+
+  <div class="field">
+    <label>顏色</label>
+    <div class="opt-row" id="colorRow">
+      <div class="opt c-red active"    data-color="#ff2d2d"><span class="swatch sw-red"></span>紅</div>
+      <div class="opt c-green"  data-color="#20e35a"><span class="swatch sw-green"></span>綠</div>
+      <div class="opt c-yellow" data-color="#ffe600"><span class="swatch sw-yellow"></span>黃</div>
+      <div class="opt c-white"  data-color="#ffffff"><span class="swatch sw-white"></span>白</div>
+      <div class="opt c-cyan"   data-color="#1ad1ff"><span class="swatch sw-cyan"></span>藍</div>
+    </div>
+  </div>
+
+  <div class="field">
+    <label>速度</label>
+    <div class="opt-row" id="speedRow">
+      <div class="opt spd" data-speed="140">慢</div>
+      <div class="opt spd active" data-speed="90">中</div>
+      <div class="opt spd" data-speed="50">快</div>
+    </div>
+  </div>
+
+  <button id="startBtn">開始播放</button>
+  <p class="hint">播放中點畫面任一處即可回到設定<br>手機橫放字會更大</p>
+</div>
+
+<div id="player">
+  <div id="exitHint">點一下畫面結束</div>
+  <div id="marquee"></div>
+</div>
+
+<script>
+  const $ = s => document.querySelector(s);
+  const state = { color: '#ff2d2d', speed: 90 };
+
+  // 顏色選擇
+  $('#colorRow').addEventListener('click', e => {
+    const b = e.target.closest('.opt'); if (!b) return;
+    $('#colorRow').querySelectorAll('.opt').forEach(o => o.classList.remove('active'));
+    b.classList.add('active');
+    state.color = b.dataset.color;
+  });
+
+  // 速度選擇（數字 = 每秒移動像素的倒數基準，越小越快）
+  $('#speedRow').addEventListener('click', e => {
+    const b = e.target.closest('.opt'); if (!b) return;
+    $('#speedRow').querySelectorAll('.opt').forEach(o => o.classList.remove('active'));
+    b.classList.add('active');
+    state.speed = Number(b.dataset.speed);
+  });
+
+  let anim = null;
+
+  function fitFontSize() {
+    // 讓字高度幾乎佔滿螢幕高度
+    const h = window.innerHeight;
+    const size = Math.max(80, Math.floor(h * 0.72));
+    $('#marquee').style.fontSize = size + 'px';
+  }
+
+  function startPlay() {
+    const txt = $('#text').value.trim() || ' ';
+    const m = $('#marquee');
+    m.textContent = txt;
+    m.style.color = state.color;
+    m.style.textShadow = '0 0 24px ' + state.color + '88';
+    $('#player').classList.add('on');
+    fitFontSize();
+
+    // 嘗試鎖定橫向（支援的瀏覽器才有效）
+    if (screen.orientation && screen.orientation.lock) {
+      screen.orientation.lock('landscape').catch(() => {});
+    }
+
+    runMarquee();
+    requestWakeLock();
+
+    // 幾秒後淡出提示
+    const hint = $('#exitHint');
+    hint.style.opacity = '1';
+    setTimeout(() => hint.style.opacity = '0', 2500);
+  }
+
+  function runMarquee() {
+    const m = $('#marquee');
+    const vw = window.innerWidth;
+    const textW = m.getBoundingClientRect().width;
+    // pxPerSec：speed 越小越快
+    const pxPerSec = (window.innerWidth) * (120 / state.speed) * 1.1;
+    let x = vw;                 // 從右邊外側進場
+    const total = vw + textW;   // 跑完整段需要移動的距離
+    let last = performance.now();
+
+    function step(now) {
+      const dt = (now - last) / 1000; last = now;
+      x -= pxPerSec * dt;
+      if (x < -textW) x = vw;   // 跑完從右邊重來
+      m.style.transform = 'translateX(' + x + 'px)';
+      anim = requestAnimationFrame(step);
+    }
+    cancelAnimationFrame(anim);
+    anim = requestAnimationFrame(step);
+  }
+
+  function stopPlay() {
+    cancelAnimationFrame(anim); anim = null;
+    $('#player').classList.remove('on');
+    if (screen.orientation && screen.orientation.unlock) {
+      try { screen.orientation.unlock(); } catch (e) {}
+    }
+    releaseWakeLock();
+  }
+
+  $('#startBtn').addEventListener('click', startPlay);
+  $('#player').addEventListener('click', stopPlay);
+  window.addEventListener('resize', () => {
+    if ($('#player').classList.contains('on')) { fitFontSize(); runMarquee(); }
+  });
+
+  // 螢幕恆亮（支援的瀏覽器）
+  let wakeLock = null;
+  async function requestWakeLock() {
+    try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {}
+  }
+  function releaseWakeLock() { try { wakeLock && wakeLock.release(); wakeLock = null; } catch (e) {} }
+
+  // 註冊 service worker（離線用）
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(()=>{}));
+  }
+</script>
+</body>
+</html>
