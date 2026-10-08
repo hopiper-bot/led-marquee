@@ -212,6 +212,11 @@
   function stopPlay() {
     cancelAnimationFrame(anim); anim = null;
     $('#player').classList.remove('on');
+
+    // 離開播放畫面後立即清除，避免下一位使用者看到內容
+    $('#text').value = '';
+    $('#marquee').textContent = '';
+
     if (screen.orientation && screen.orientation.unlock) {
       try { screen.orientation.unlock(); } catch (e) {}
     }
