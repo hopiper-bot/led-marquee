@@ -1,5 +1,5 @@
 // LED 跑馬燈 Service Worker — 離線快取
-const CACHE = 'led-marquee-v2';
+const CACHE = 'led-marquee-v3';
 const ASSETS = [
   './',
   './index.html',
