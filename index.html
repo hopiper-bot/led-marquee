@@ -236,9 +236,16 @@
   }
   function releaseWakeLock() { try { wakeLock && wakeLock.release(); wakeLock = null; } catch (e) {} }
 
-  // 註冊 service worker（離線用）
+  // 註冊 service worker（離線用），每次開啟都主動檢查新版
   if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(()=>{}));
+    window.addEventListener('load', async () => {
+      try {
+        const registration = await navigator.serviceWorker.register('sw.js', {
+          updateViaCache: 'none'
+        });
+        registration.update().catch(() => {});
+      } catch (e) {}
+    });
   }
 </script>
 </body>
