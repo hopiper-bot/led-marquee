@@ -119,11 +119,11 @@
   </div>
 
   <div class="field">
-    <label>速度</label>
+    <label>速度（字／秒）</label>
     <div class="opt-row" id="speedRow">
-      <div class="opt spd" data-speed="25">慢</div>
-      <div class="opt spd active" data-speed="45">中</div>
-      <div class="opt spd" data-speed="80">快</div>
+      <div class="opt spd" data-speed="2">慢</div>
+      <div class="opt spd active" data-speed="3.5">中</div>
+      <div class="opt spd" data-speed="5">快</div>
     </div>
   </div>
 
@@ -138,7 +138,7 @@
 
 <script>
   const $ = s => document.querySelector(s);
-  const state = { color: '#ff2d2d', speed: 45 };
+  const state = { color: '#ff2d2d', speed: 3.5 };
 
   // 顏色選擇
   $('#colorRow').addEventListener('click', e => {
@@ -148,7 +148,7 @@
     state.color = b.dataset.color;
   });
 
-  // 速度選擇（數字 = 每秒移動的像素，數字越小越慢）
+  // 速度選擇（數字 = 每秒通過畫面的中文字數）
   $('#speedRow').addEventListener('click', e => {
     const b = e.target.closest('.opt'); if (!b) return;
     $('#speedRow').querySelectorAll('.opt').forEach(o => o.classList.remove('active'));
@@ -192,8 +192,9 @@
     const m = $('#marquee');
     const vw = window.innerWidth;
     const textW = m.getBoundingClientRect().width;
-    // 使用固定像素速度，不因平板橫放、螢幕變寬而突然加速
-    const pxPerSec = state.speed;
+    // 以目前字體大小換算速度，橫直向都維持相同的「字／秒」
+    const fontSize = parseFloat(getComputedStyle(m).fontSize);
+    const pxPerSec = fontSize * state.speed;
     let x = vw;                 // 從右邊外側進場
     const total = vw + textW;   // 跑完整段需要移動的距離
     let last = performance.now();
