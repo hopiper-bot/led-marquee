@@ -119,11 +119,11 @@
   </div>
 
   <div class="field">
-    <label>速度（字／秒）</label>
+    <label>速度</label>
     <div class="opt-row" id="speedRow">
-      <div class="opt spd" data-speed="2">慢</div>
-      <div class="opt spd active" data-speed="3.5">中</div>
-      <div class="opt spd" data-speed="5">快</div>
+      <div class="opt spd" data-speed="1">慢</div>
+      <div class="opt spd active" data-speed="2">中</div>
+      <div class="opt spd" data-speed="3.5">快</div>
     </div>
   </div>
 
@@ -138,7 +138,7 @@
 
 <script>
   const $ = s => document.querySelector(s);
-  const state = { color: '#ff2d2d', speed: 3.5 };
+  const state = { color: '#ff2d2d', speed: 2 };
 
   // 顏色選擇
   $('#colorRow').addEventListener('click', e => {
@@ -148,7 +148,7 @@
     state.color = b.dataset.color;
   });
 
-  // 速度選擇（數字 = 每秒通過畫面的中文字數）
+  // 速度選擇（數字 = 每秒移動的中文字寬度）
   $('#speedRow').addEventListener('click', e => {
     const b = e.target.closest('.opt'); if (!b) return;
     $('#speedRow').querySelectorAll('.opt').forEach(o => o.classList.remove('active'));
